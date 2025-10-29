@@ -1,19 +1,18 @@
 # main.py
-from cajero import Cajero
+from cajero import Cajero, generar_cajas
+
 from cajero_express import CajeroExpress
 
 def main():
     print("=== SIMULADOR DE FILAS EN SUPERMERCADO ===\n")
 
-    # Definimos las cajas con sus clientes y artículos
-    cajas = [
-        Cajero("Caja 1",  articulos_por_cliente=[12, 1]),
-        CajeroExpress("Caja Express", articulos_por_cliente=[5, 8]),
-    ]
+    #Configuracion automatica
+    num_cajas = int(input("Ingresa cuantas cajas normales estan activas:"))
+    cajas = generar_cajas(num_cajas,Cajero,CajeroExpress)
 
     print("Configuración inicial:\n")
-    for c in cajas:
-        print(f" - {c} | Artículos por cliente: {c.articulos_por_cliente}")
+    for caja in cajas:
+        print(f" - {caja.nombre}| Clientes: {caja.clientes} | Artículos por cliente: {caja.articulos_por_cliente}")
 
     print("\n--- CÁLCULO DETALLADO DE TIEMPOS ---")
 
@@ -28,14 +27,14 @@ def main():
 
             print(f" Cliente {idx}: {articulos} artículos")
             print(f" Tiempo de scaneo por artículo: {tiempos_articulos}")
-            print(f" Escaneo total: {sum(tiempos_articulos)}s")
-            print(f" Cobro: {tiempo_cobro}s")
-            print(f" Tiempo total cliente: {tiempo_total}s\n")
+            print(f" Escaneo total: {sum(tiempos_articulos)} s")
+            print(f" tiempo de Cobro: {tiempo_cobro} s")
+            print(f" Tiempo total de atencion al cliente: {tiempo_total} s\n")
 
             total_caja += tiempo_total
 
         tiempos[caja.nombre] = total_caja
-        print(f"➡ TOTAL {caja.nombre}: {total_caja}s ({total_caja/60:.2f} min)")
+        print(f"***> TOTAL {caja.nombre}: {total_caja} s ({total_caja/60:.2f} min)")
 
     # Determinar la caja más rápida
     mejor_caja = min(tiempos, key=tiempos.get)
@@ -44,5 +43,3 @@ def main():
     
 if __name__ == "__main__":
     main()
-
-# cuanto tiene que esperar el 
