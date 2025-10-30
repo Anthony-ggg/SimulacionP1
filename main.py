@@ -1,7 +1,8 @@
 # main.py
 from cajero import Cajero, generar_cajas
-
 from cajero_express import CajeroExpress
+from simulador import simular_todas
+
 
 def main():
     print("=== SIMULADOR DE FILAS EN SUPERMERCADO ===\n")
@@ -40,6 +41,18 @@ def main():
     mejor_caja = min(tiempos, key=tiempos.get)
     print(f"\n✅ La mejor opción para salir más rápido es: {mejor_caja}")
 
+
+    # SIMULACIÓN VISUAL EN CONSOLA
+    # --------------------------
+    # SIMULACIÓN DE TODAS LAS CAJAS
+    ejecutar_simulacion = input("\n¿Deseas ejecutar la simulación visual de TODAS las cajas? (s/n): ").lower()
+    if ejecutar_simulacion == 's':
+        simular_todas(cajas)
+
+
     
 if __name__ == "__main__":
     main()
+
+
+    
