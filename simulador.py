@@ -58,17 +58,26 @@ def simular_todas(cajas):
             articulos = e["articulos"]
             art_actual = e["articulo"]
 
+
+             # ---------- Colores y distintivo ----------
+            if "express" in caja.nombre.lower():
+                color = "\033[91m"  # rojo para Caja Express
+                
+            else:
+                color = "\033[96m"  # Cian para cajas normales
+                
+            reset = "\033[0m"
+
+            total_clientes = len(caja.articulos_por_cliente)
+
             # ====== FASE 1: Escaneo ======
             if e["fase"] == "escaneo":
-                total_clientes = len(caja.articulos_por_cliente)
-                clientes_atendidos = e["cliente"]   # Cuántos ya se atendieron
-                cliente_actual = cliente            # Cuál se está atendiendo ahora
-
                 print(
-                    f"⏳ {caja.nombre:<14} "
-                    f"Cliente {cliente_actual}/{total_clientes} "
+                    f"{color} {caja.nombre:<14}{reset} "
+                    f"Cliente {cliente}/{total_clientes} "
                     f"({articulos} art.) 🔄 [{barra_progreso(art_actual, articulos)}] {art_actual}/{articulos}"
                 )
+                
                 
                 # Avance interno del cliente
                 e["articulo"] += 1
@@ -83,7 +92,11 @@ def simular_todas(cajas):
 
             # ====== FASE 2: Pago ======
             elif e["fase"] == "pago":
-                print(f"🤑 {caja.nombre:<14} Cliente {cliente:<2} pagando... ({e['contador']}s)")
+                print(
+                    f"{color} {caja.nombre:<14}{reset} "
+                    f"Cliente {cliente}/{total_clientes} "
+                    f"🤑 Pagando... ({e['contador']}s)"
+                )
                 e["contador"] -= 1
                 tiempos_totales[caja.nombre] += 1  # Tiempo de pago
 
@@ -95,8 +108,10 @@ def simular_todas(cajas):
 
             # ====== FASE 3: Cliente atendido ======
             elif e["fase"] == "finalizado":
-                print(f"🫶 {caja.nombre:<14} Cliente {cliente:<2} atendido ✅")
-
+                print(
+                    f"{color} {caja.nombre:<14}{reset} "
+                    f"Cliente {cliente}/{total_clientes} 🫶 Atendido ✅"
+                )
                 # Pasar al siguiente cliente
                 e["cliente"] += 1
                 if e["cliente"] < len(caja.articulos_por_cliente):
@@ -111,7 +126,7 @@ def simular_todas(cajas):
         
         # Actualiza estados y ritmo de simulación
         estados = nuevos_estados
-        time.sleep(1.25)
+        time.sleep(0.5)
 
 
    
@@ -123,11 +138,34 @@ def simular_todas(cajas):
 
     
     limpiar()
-    print("  RESUMEN   FINAL")
-    print("═" * 50 + "\n")
+    
+    print(" CONFIGURACION INICIAL DE LAS CAJAS")
+    print("═" * 100 + "\n")
 
+    for caja in cajas:
+        total_articulos = sum(caja.articulos_por_cliente)
+        clientes_caja = len(caja.articulos_por_cliente)
+        if "express" in caja.nombre.lower():
+            color = "\033[91m"  # rojo
+            
+        else:
+            color = "\033[96m"  # Cian
+            
+        reset = "\033[0m"
+
+        print(f"{color} {caja.nombre:<14}{reset} | "
+            f"Clientes: {clientes_caja:<2} | "
+            f"Artículos por cliente: {caja.articulos_por_cliente} "
+            f"(Total artículos: {total_articulos})")
+
+
+
+
+    
+    print("═" * 100 + "\n")
+    print("  RESUMEN   FINAL")
     # Datos globales
-    print(f" Total de clientes atendidos: {total_clientes}")
+    
 
     # Resultados por caja
     print("  RESULTADOS POR CAJA:\n")
@@ -135,8 +173,26 @@ def simular_todas(cajas):
         nombre = caja.nombre
         tiempo_total = tiempos_totales[nombre]
         clientes_caja = len(caja.articulos_por_cliente)
-        print(f"🖥️-{nombre:<14} → {clientes_caja:>2} cliente(s) | {tiempo_total:>6.2f} s totales ")
 
+        # Determinar color 
+        if "express" in nombre.lower():
+            color = "\033[91m"  # rojo
+            
+        else:
+            color = "\033[96m"  # Cian
+            
+        reset = "\033[0m"
+
+        # Si esta es la mejor caja, remarcar en verde
+        if nombre == mejor_caja:
+            color = "\033[92m"  # verde
+            
+        # Imprimir resultado con color y alineación
+        print(f"{color}{nombre:<14}{reset} → "
+            f"{clientes_caja:>2} cliente(s) | {tiempo_total:>6.2f} s totales")
+        
+        
     # Caja más rápida
     print("\n Caja más eficiente:  {0}  ({1:.2f} s)".format(mejor_caja, tiempos_totales[mejor_caja]))
     time.sleep(1)
+    print(f" Total de clientes atendidos: {total_clientes}")
