@@ -370,7 +370,6 @@ def simular_visual(cajas):
 
         simulacion_activa = True
         btn_iniciar.config(state='disabled', text="Simulación en curso...")
-        btn_nueva.config(state='disabled')
 
         threads = []
         for ui in cajas_ui:
@@ -396,22 +395,14 @@ def simular_visual(cajas):
                 root.after(0, lambda: info.config(text="Caja más rápida: N/A"))
 
             simulacion_activa = False
-            root.after(0, lambda: btn_nueva.config(state='normal'))
+            # simulacion finalizada
 
         threading.Thread(target=watcher, daemon=True).start()
-
-    def nueva_simulacion():
-        root.destroy()
-        # Reiniciar desde el principio
-        root.after(100, main)
 
     # Botón situado en la esquina superior derecha
     btn_iniciar = tk.Button(root, text="Iniciar Simulación", font=("Arial", 14), command=iniciar)
     btn_iniciar.place(relx=1.0, x=-10, y=10, anchor='ne')
     
-    # Botón para nueva simulación
-    btn_nueva = tk.Button(root, text="Nueva Simulación", font=("Arial", 14), command=nueva_simulacion, state='disabled')
-    btn_nueva.place(relx=1.0, x=-10, y=60, anchor='ne')
     
     root.mainloop()
 
