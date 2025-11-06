@@ -44,15 +44,8 @@ def main():
     mejor_caja = min(tiempos, key=tiempos.get)
     print(f"\n✅ La mejor opción para salir más rápido es: {mejor_caja}")
 
-    
-
-    # SIMULACIÓN VISUAL EN CONSOLA
-    # --------------------------
-    # SIMULACIÓN DE TODAS LAS CAJAS
-    ejecutar_simulacion = input("\n¿Deseas ejecutar la simulación visual de TODAS las cajas? (s/n): ").lower()
-    if ejecutar_simulacion == 's':
-        "simular_todas(cajas)"
-        simular_visual(cajas)
+    # Ejecutar la simulación visual inmediatamente (sin preguntar)
+    simular_visual(cajas)
 
     
 

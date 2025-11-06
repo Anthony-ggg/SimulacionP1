@@ -1,6 +1,7 @@
 import tkinter as tk
 import time
 import threading
+import tkinter.messagebox as messagebox
 from simulador import barra_progreso
 
 
@@ -280,24 +281,97 @@ def simular_visual(cajas):
     root = tk.Tk()
     root.title("Simulación Visual de Cajas")
 
-    canvas = tk.Canvas(root, width=1100, height=150 + len(cajas) * 90, bg="white")
-    canvas.pack()
+    # Scrollable canvas: compute exact total height and show a clipped
+    # viewport (up to 6 cajas high). The canvas scrollregion is set to the
+    # full content height so the scrollbar can reach all cajas.
+    total_height = 150 + len(cajas) * 100
+    visible_height = 150 + min(len(cajas), 6) * 100
+
+    # Layout: canvas on the left, results side-frame will be added below
+    canvas_container = tk.Frame(root)
+    canvas_container.pack(fill='both', expand=True)
+
+    canvas = tk.Canvas(canvas_container, width=1100, height=visible_height, bg="white")
+    vsb = tk.Scrollbar(canvas_container, orient='vertical')
+    canvas.configure(yscrollcommand=vsb.set)
+
+    vsb.pack(side='right', fill='y')
+    canvas.pack(side='left', fill='both', expand=True)
 
     # Título principal
     canvas.create_text(550, 25, text="- SUPERMERCADO -", font=("Arial", 20, "bold"), fill="#2c3e50")
     canvas.create_text(550, 55, text="── Sección de Cajas ──", font=("Arial", 14), fill="#7f8c8d")
 
+    # Compute posiciones and snap targets before creating CajaUI
+    posiciones = [130 + i * 100 for i in range(len(cajas))]
+    header_height = 90
+    snap_targets = [max(0, y - header_height) for y in posiciones]
+    max_scroll_px = max(0, total_height - visible_height)
+
+    # Set scrollregion and initial view
+    canvas.configure(scrollregion=(0, 0, 1100, total_height))
+    canvas.yview_moveto(0)
+
+    # Snapping helpers
+    snap_after_id = None
+
+    def snap_to_nearest():
+        nonlocal snap_after_id
+        snap_after_id = None
+        try:
+            curr = canvas.canvasy(0)
+            nearest = min(snap_targets, key=lambda t: abs(t - curr)) if snap_targets else 0
+            target = min(max(0, nearest), max_scroll_px)
+            canvas.yview_moveto(target / total_height if total_height > 0 else 0)
+        except Exception:
+            pass
+
+    def schedule_snap(delay=200):
+        nonlocal snap_after_id
+        if snap_after_id:
+            root.after_cancel(snap_after_id)
+        snap_after_id = root.after(delay, snap_to_nearest)
+
+    # Scroll handlers
+    def on_vsb_scroll(*args):
+        try:
+            # Delegate to canvas yview
+            canvas.yview(*args)
+        except Exception:
+            pass
+        schedule_snap()
+
+    def _on_mousewheel(event):
+        try:
+            canvas.yview_scroll(int(-1 * (event.delta / 120)), 'units')
+        except Exception:
+            pass
+        schedule_snap()
+
+    vsb.config(command=on_vsb_scroll)
+    canvas.bind('<Enter>', lambda e: canvas.bind_all('<MouseWheel>', _on_mousewheel))
+    canvas.bind('<Leave>', lambda e: canvas.unbind_all('<MouseWheel>'))
+
+    # Small info label (kept for compatibility but not used as primary result area)
     info = tk.Label(root, text="", font=("Arial", 14), fg="black", justify="center")
     info.pack(pady=10)
-
-    posiciones = [130 + i * 80 for i in range(len(cajas))]
 
     cajas_ui = [
         CajaUI(canvas, caja, posiciones[i], info)
         for i, caja in enumerate(cajas)
     ]
 
+    simulacion_activa = False
+
     def iniciar():
+        nonlocal simulacion_activa
+        if simulacion_activa:
+            return
+
+        simulacion_activa = True
+        btn_iniciar.config(state='disabled', text="Simulación en curso...")
+        btn_nueva.config(state='disabled')
+
         threads = []
         for ui in cajas_ui:
             t = threading.Thread(target=ui.atender)
@@ -305,6 +379,7 @@ def simular_visual(cajas):
             threads.append(t)
 
         def watcher():
+            nonlocal simulacion_activa
             for t in threads:
                 t.join()
             try:
@@ -315,11 +390,112 @@ def simular_visual(cajas):
                 secs = int(mejor_t % 60)
                 texto = f"Caja más rápida: {mejor_nombre} (≈ {mins} min {secs} s)"
                 root.after(0, lambda: info.config(text=texto))
+                # Popup to ensure the user sees the result
+                root.after(100, lambda: messagebox.showinfo("Mejor caja", f"Caja más rápida: {mejor_nombre}\nTiempo: {mins} min {secs} s"))
             except Exception:
                 root.after(0, lambda: info.config(text="Caja más rápida: N/A"))
 
+            simulacion_activa = False
+            root.after(0, lambda: btn_nueva.config(state='normal'))
+
         threading.Thread(target=watcher, daemon=True).start()
 
+    def nueva_simulacion():
+        root.destroy()
+        # Reiniciar desde el principio
+        root.after(100, main)
+
+    # Botón situado en la esquina superior derecha
     btn_iniciar = tk.Button(root, text="Iniciar Simulación", font=("Arial", 14), command=iniciar)
     btn_iniciar.place(relx=1.0, x=-10, y=10, anchor='ne')
+    
+    # Botón para nueva simulación
+    btn_nueva = tk.Button(root, text="Nueva Simulación", font=("Arial", 14), command=nueva_simulacion, state='disabled')
+    btn_nueva.place(relx=1.0, x=-10, y=60, anchor='ne')
+    
     root.mainloop()
+
+
+def main():
+    """Función principal para configurar y ejecutar la simulación."""
+    from simulador import Caja
+    
+    root = tk.Tk()
+    root.title("Configuración de Simulación")
+    root.geometry("500x400")
+    root.resizable(False, False)
+    
+    # Frame principal
+    main_frame = tk.Frame(root, bg="white", padx=20, pady=20)
+    main_frame.pack(fill="both", expand=True)
+    
+    # Título
+    tk.Label(main_frame, text="🛒 Configuración de Cajas", font=("Arial", 18, "bold"), bg="white", fg="#2c3e50").pack(pady=(0, 20))
+    
+    # Frame para cajas normales
+    frame_normal = tk.Frame(main_frame, bg="white")
+    frame_normal.pack(pady=10, fill="x")
+    tk.Label(frame_normal, text="Cajas Normales:", font=("Arial", 12), bg="white").pack(side="left", padx=(0, 10))
+    spin_normal = tk.Spinbox(frame_normal, from_=0, to=10, width=10, font=("Arial", 12))
+    spin_normal.delete(0, "end")
+    spin_normal.insert(0, "2")
+    spin_normal.pack(side="left")
+    
+    # Frame para cajas express (fija en 1, no editable)
+    frame_express = tk.Frame(main_frame, bg="white")
+    frame_express.pack(pady=10, fill="x")
+    tk.Label(frame_express, text="Cajas Express:", font=("Arial", 12), bg="white").pack(side="left", padx=(0, 10))
+    # Mostramos la express como fija en 1 (por defecto). El usuario solo elige las normales.
+    tk.Label(frame_express, text="1 (por defecto)", font=("Arial", 12), bg="white").pack(side="left")
+    
+    # Información
+    info_text = """
+    Cajas Normales: Sin límite de artículos
+    Cajas Express: Máximo 10 artículos por cliente
+    
+    Los clientes se distribuirán aleatoriamente.
+    """
+    tk.Label(main_frame, text=info_text, font=("Arial", 10), bg="white", fg="#666666", justify="left").pack(pady=20)
+    
+    # Variable para mensaje de error
+    error_label = tk.Label(main_frame, text="", font=("Arial", 10), bg="white", fg="red")
+    error_label.pack()
+    
+    def iniciar_simulacion():
+        try:
+            num_normales = int(spin_normal.get())
+            # La cantidad de cajas express está fija en 1 por defecto
+            num_express = 1
+            
+            if num_normales + num_express == 0:
+                error_label.config(text="Debe haber al menos una caja")
+                return
+            
+            if num_normales + num_express > 10:
+                error_label.config(text="Máximo 10 cajas en total")
+                return
+            
+            # Crear cajas
+            cajas = []
+            for i in range(num_normales):
+                cajas.append(Caja(f"Caja {i+1}"))
+            for i in range(num_express):
+                cajas.append(Caja(f"Caja Express {i+1}", es_express=True))
+            
+            # Cerrar ventana de configuración
+            root.destroy()
+            
+            # Iniciar simulación visual
+            simular_visual(cajas)
+            
+        except ValueError:
+            error_label.config(text="Por favor ingrese números válidos")
+    
+    # Botón iniciar
+    btn_iniciar = tk.Button(main_frame, text="Iniciar Simulación", font=("Arial", 14, "bold"), 
+                           bg="#3498db", fg="white", padx=20, pady=10, command=iniciar_simulacion)
+    btn_iniciar.pack(pady=20)
+    
+    root.mainloop()
+
+
