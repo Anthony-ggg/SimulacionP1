@@ -2,14 +2,17 @@
 from cajero import Cajero, generar_cajas
 from cajero_express import CajeroExpress
 from simulador import simular_todas
+from SimuladorVisual import simular_visual
 
 
 def main():
     print("=== SIMULADOR DE FILAS EN SUPERMERCADO ===\n")
 
     #Configuracion automatica
-    num_cajas = int(input("Ingresa cuantas cajas normales estan activas:"))
+    num_cajas = int(input("Ingresa numero de cajas normales:"))
     cajas = generar_cajas(num_cajas,Cajero,CajeroExpress)
+
+    
 
     print("Configuración inicial:\n")
     for caja in cajas:
@@ -41,13 +44,17 @@ def main():
     mejor_caja = min(tiempos, key=tiempos.get)
     print(f"\n✅ La mejor opción para salir más rápido es: {mejor_caja}")
 
+    
 
     # SIMULACIÓN VISUAL EN CONSOLA
     # --------------------------
     # SIMULACIÓN DE TODAS LAS CAJAS
     ejecutar_simulacion = input("\n¿Deseas ejecutar la simulación visual de TODAS las cajas? (s/n): ").lower()
     if ejecutar_simulacion == 's':
-        simular_todas(cajas)
+        "simular_todas(cajas)"
+        simular_visual(cajas)
+
+    
 
 
     
