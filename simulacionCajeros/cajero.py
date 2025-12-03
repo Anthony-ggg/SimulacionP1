@@ -48,12 +48,12 @@ def generar_cajas(num_cajas, CajeroClass, ExpressClass):
      cajas = []
         # Cajas normales
      for i in range(1, num_cajas + 1):
-         num_clientes = random.randint(1, 3)
+         num_clientes = random.randint(1, 10)
          clientes = generar_clientes_aleatorios(num_clientes, max_articulos= 20)
          cajas.append(CajeroClass(f"Caja {i}", clientes))
 
     # Caja express
-     num_clientes_express = random.randint(3, 6)
+     num_clientes_express = random.randint(1, 10)
      clientes_express = generar_clientes_aleatorios(num_clientes_express,max_articulos=10)
      cajas.append(ExpressClass("Caja Express", clientes_express))
 
